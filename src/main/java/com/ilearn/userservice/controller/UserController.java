@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ilearn.userservice.model.CommentDTO;
@@ -23,6 +25,7 @@ import com.ilearn.userservice.service.UserService;
 
 @RestController
 @RequestMapping("/user-service")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
 	@Autowired
@@ -36,9 +39,14 @@ public class UserController {
 		return userRepository.findByUserRole(role);
 	}
 
+	@GetMapping("/getList")
+	public List<UserModel> getUsersIfRole(@RequestParam(required = false) String role) {
+		return userService.getUsersIfRole(role);
+	}
+	
 	@PostMapping("/create")
 	public UserModel createUser(@RequestBody UserModel userModel) {
-		return userRepository.save(userModel);
+		return userService.createUser(userModel);
 	}
 
 	@PutMapping("/update/{id}")

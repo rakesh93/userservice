@@ -10,9 +10,12 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ilearn.userservice.exception.UserNotFoundException;
+import com.ilearn.userservice.kafka.UserKafkaProducer;
 import com.ilearn.userservice.model.CommentDTO;
 import com.ilearn.userservice.model.PostDTO;
 import com.ilearn.userservice.model.ReplyDTO;
+import com.ilearn.userservice.model.UserCreatedEvent;
 import com.ilearn.userservice.model.UserDTO;
 import com.ilearn.userservice.model.UserModel;
 import com.ilearn.userservice.model.VoterDTO;
@@ -24,7 +27,30 @@ public class UserService {
 	@Autowired
 	private UserRepository userRepository;
 
+	@Autowired
+	private UserKafkaProducer userKafkaProducer;
+
 	private final ObjectMapper objectMapper = new ObjectMapper();
+
+	public UserModel createUser(UserModel userModel) {
+		UserModel savedUser = userRepository.save(userModel);
+		userKafkaProducer.sendMessage("Successfully Created this User : " + savedUser.getFirstName() + savedUser.getLastName());
+		userKafkaProducer.publish(new UserCreatedEvent(savedUser.getId(),savedUser.getFirstName()));
+
+		return savedUser;
+	}
+
+	public List<UserModel> getUsersIfRole(String role) {
+		if (role == null || role.isBlank()) {
+			return userRepository.findAll();
+		}
+		List<UserModel> users = userRepository.findByUserRole(role);
+		if (users.isEmpty()) {
+			throw new UserNotFoundException("No users found with this role : " + role);
+		}
+
+		return users;
+	}
 
 	public UserModel updateUser(Long id, UserModel userModel) {
 
